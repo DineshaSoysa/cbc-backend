@@ -5,6 +5,26 @@ import jwt from "jsonwebtoken";
 export function createUser(req, res) {
   const hashedPassword = bcrypt.hashSync(req.body.password, 10);
 
+  if(req.body.role == 'admin'){
+    if(req.user != null){
+      if(req.user.role != 'admin'){
+        res.json({
+          message : 'you are not an admin'
+        })
+
+        return;
+      } 
+    }else{
+      res.json({
+        message : 'you can not register as admin'
+      })
+  
+      return;
+    }
+    
+
+  }
+
   const user = new User({
     firstname: req.body.firstname,
     lastname: req.body.lastname,
@@ -65,4 +85,14 @@ export function userLogin(req, res) {
       });
     }
   });
+}
+
+export function isAdmin(req){
+  if(req.user == null){
+    return false;
+  } 
+  if(req.user.role != 'admin'){
+    return false;
+  }
+  return true;
 }

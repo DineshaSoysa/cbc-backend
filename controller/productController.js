@@ -1,48 +1,77 @@
 import Product from "../model/productModel.js";
+import { isAdmin } from "./userController.js";
 
-export function saveProduct(req,res){
+//Save new product
+export function saveProduct(req, res) {
+  if (!isAdmin(req)) {
+    res.json({
+      message: "You are not authorized to add a product",
+    });
 
-    
+    return;
+  }
 
-    if(req.user == null){
-        console.log('1')
-        res.json({
-            message : 'Please login first'
-        })
-        return
-    }
+  const product = new Product(req.body);
 
-    if(req.user.role != 'admin'){
-        console.log('2')
-
-        res.json({
-            message : 'you are not authorized'
-        })
-        return
-    }
-
-    const product = new Product({
-        productname : req.body.productname,
-        price : req.body.price,
-        stock : req.body.stock
+  product
+    .save()
+    .then(() => {
+      res.json({
+        message: "Product saved",
+      });
     })
+    .catch(() => {
+      res.json({
+        message: "Product not saved",
+      });
+    });
+}
 
-    product.save().then(
+//Get the products
+export async function displayProducts(req, res) {
+  try {
+    //Admin can see all the products but others can only see products which have stocks
+    if (isAdmin(req)) {
+      const productlist = await Product.find();
+      res.json(productlist);
+    } else {
+      const productlist = await Product.find({ isAvailable: true });
+      res.json(productlist);
+    }
+  } catch (err) {
+    res.json(err);
+  }
+}
 
-        ()=>{
-            console.log('3')
+//Get one product
+export async function displayProduct(req, res) {
+  try {
+    const product = await Product.findOne({ productID: req.params.productID });
 
-            res.json({
-                message : 'Product saved'
-            })
-        }
-    ).catch(
-        ()=>{
-            console.log('4')
+    res.json(product);
+  } catch (err) {
+    res.json({
+      message: "nothing to show",
+    });
+  }
+}
 
-            res.json({
-                message : 'Product not saved'
-            })
-        }
-    )
+//Delete products
+export async function deleteProducts(req, res) {
+  try {
+    if (isAdmin) {
+      await Product.deleteOne({ productID: req.params.productID });
+      res.json({
+        message: "product deleted",
+      });
+    } else {
+      res.json({
+        message: "Not authorized to delete products",
+      });
+    }
+  } catch (err) {
+    res.json({
+      message: err,
+    });
+  }
 }
