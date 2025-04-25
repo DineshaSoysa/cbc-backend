@@ -47,8 +47,26 @@ export async function displayProducts(req, res) {
 export async function displayProduct(req, res) {
   try {
     const product = await Product.findOne({ productID: req.params.productID });
+    if (product == null) {
+      res.json({
+        message: "Product not available!",
+      });
 
-    res.json(product);
+      return;
+    }
+
+    if (!isAdmin(req)) {
+      if (!product.isAvailable) {
+        res.json({
+          message: "Product not available",
+        });
+        return;
+      } else {
+        res.json(product);
+      }
+    } else {
+      res.json(product);
+    }
   } catch (err) {
     res.json({
       message: "nothing to show",
@@ -73,5 +91,29 @@ export async function deleteProducts(req, res) {
     res.json({
       message: err,
     });
+  }
+}
+
+//Update product
+
+export async function updateProduct(req, res) {
+  if (!isAdmin(req)) {
+    res.json({
+      message: "You are not authorized to update product!",
+    });
+    return;
+  }
+  const productID = req.params.productID;
+
+  try {
+    await Product.updateOne({ productID: productID }, req.body);
+    res.json({
+      message: "Product updated!",
+    });
+  } catch (err) {
+    res,
+      json({
+        message: err,
+      });
   }
 }
